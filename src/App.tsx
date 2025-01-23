@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Minus, Search } from 'lucide-react';
 
 interface Parameter {
@@ -18,7 +18,17 @@ interface BackendRequest {
   nameSelector: { [key: string]: string }[];
 }
 
+interface BackendResponse {
+  [key: string]: string;
+}
+
 function App() {
+  const [data, setData] = useState<BackendResponse[]>([]);
+  useEffect(() => {
+    console.log('data ha cambiado:', data);
+  }, [data]);
+
+
   const [config, setConfig] = useState<ScrapingConfig>({
     url: '',
     articleSelector: '',
@@ -43,7 +53,7 @@ function App() {
   const updateParameter = (index: number, field: keyof Parameter, value: string) => {
     setConfig(prev => ({
       ...prev,
-      parameters: prev.parameters.map((param, i) => 
+      parameters: prev.parameters.map((param, i) =>
         i === index ? { ...param, [field]: value } : param
       )
     }));
@@ -79,12 +89,14 @@ function App() {
         throw new Error('Error en la respuesta del servidor');
       }
 
-      const data = await response.json();
-      console.log('Respuesta del servidor:', data);
+      const result: BackendResponse[] = await response.json();
+      console.log('Resultado del backend:', result);
+      setData(result);
     } catch (error) {
       console.error('Error al realizar el scraping:', error);
     } finally {
       setIsLoading(false);
+      console.log('Finalizado');
     }
   };
 
@@ -96,7 +108,7 @@ function App() {
             <Search className="w-8 h-8 text-indigo-600" />
             Configuración de Web Scraping
           </h1>
-          
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
               <div>
@@ -208,6 +220,15 @@ function App() {
             </div>
           </div>
         )}
+        {data.length > 0 && (
+          <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Resultados de la Extracción</h2>
+            <div className="space-y-4">
+              <pre>{JSON.stringify(data, null, 2)}</pre>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
